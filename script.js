@@ -1,30 +1,33 @@
-// Supabase Setup (Place at the very top)
+// Supabase Setup
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
 const SUPABASE_URL = 'https://eoqyfcwotcptlddyztqr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXlmY3dvdGNwdGxkZHl6dHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NjcwNDEsImV4cCI6MjA1NjI0MzA0MX0.k6mgCB7lKUssbfbZXbUzaH2PM2jgdvzJFuB-M0bmQJg';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Get Form Elements
-const form = document.getElementById('input-form');
+const form = document.querySelector('#input-form form');
 const fishCountInput = document.getElementById('fish-count');
 const weightInput = document.getElementById('total-weight');
+const openFormButton = document.getElementById('open-form');
+const closeFormButton = document.getElementById('close-form');
 
-let dataPoints = [];  // Store the input data
-
-// Initialize Chart.js
+// Basic Chart Setup
 const ctx = document.getElementById('weight-chart').getContext('2d');
-const weightChart = new Chart(ctx, {
+let weightChart = new Chart(ctx, {
     type: 'line',
     data: {
         labels: [],
         datasets: [{
-            label: 'Total Weight (kg)',
-            data: [],
-            borderColor: 'rgba(75, 192, 192, 1)',
+            label: 'Total Weight per Fish Count',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderWidth: 2
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            data: []
         }]
     },
     options: {
+        responsive: true,
         scales: {
             x: {
                 title: {
@@ -42,13 +45,6 @@ const weightChart = new Chart(ctx, {
     }
 });
 
-// Update the chart with new data
-function updateChart() {
-    weightChart.data.labels = dataPoints.map(point => point.fishCount);
-    weightChart.data.datasets[0].data = dataPoints.map(point => point.totalWeight);
-    weightChart.update();
-}
-
 // Fetch data from Supabase and update chart
 async function fetchData() {
     const { data, error } = await supabase
@@ -61,11 +57,13 @@ async function fetchData() {
         return;
     }
 
-    dataPoints = data.map(row => ({
-        fishCount: row.fish_count,
-        totalWeight: row.total_weight
-    }));
-    updateChart();
+    // Prepare data for chart
+    const labels = data.map(row => row.fish_count);
+    const weights = data.map(row => row.total_weight);
+
+    weightChart.data.labels = labels;
+    weightChart.data.datasets[0].data = weights;
+    weightChart.update();
 }
 
 // Store input data in Supabase
@@ -88,9 +86,33 @@ form.addEventListener('submit', async (event) => {
         // Fetch the latest data and update chart
         fetchData();
         form.reset();
+        toggleForm(false);
     } else {
         alert("Please enter positive numbers!");
     }
+});
+
+// Toggle Form Visibility
+function toggleForm(show) {
+    const formContainer = document.getElementById('input-form');
+    if (show) {
+        formContainer.classList.remove('hidden');
+        formContainer.style.display = 'flex'; // Ensure flex display for centering
+    } else {
+        formContainer.classList.add('hidden');
+        formContainer.style.display = 'none'; // Hide when not in use
+    }
+}
+
+// Event Listeners for Form Toggle
+openFormButton.addEventListener('click', (event) => {
+    event.stopPropagation(); // Prevent click events from bubbling
+    toggleForm(true);
+});
+
+closeFormButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleForm(false);
 });
 
 // Initial data load
