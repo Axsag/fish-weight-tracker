@@ -1,25 +1,22 @@
-// Supabase Setup
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const SUPABASE_URL = 'https://eoqyfcwotcptlddyztqr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXlmY3dvdGNwdGxkZHl6dHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NjcwNDEsImV4cCI6MjA1NjI0MzA0MX0.k6mgCB7lKUssbfbZXbUzaH2PM2jgdvzJFuB-M0bmQJg';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Get Form Elements
 const form = document.querySelector('#input-form form');
 const fishCountInput = document.getElementById('fish-count');
 const weightInput = document.getElementById('total-weight');
 const openFormButton = document.getElementById('open-form');
 const closeFormButton = document.getElementById('close-form');
 
-// Basic Chart Setup
 const ctx = document.getElementById('weight-chart').getContext('2d');
 let weightChart = new Chart(ctx, {
     type: 'boxplot',
     data: {
         labels: [],
         datasets: [{
-            label: 'Total Weight per Legendary Fish Count',
+            label: 'Total Weight per Fish Count',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 2,
@@ -32,7 +29,7 @@ let weightChart = new Chart(ctx, {
             x: {
                 title: {
                     display: true,
-                    text: 'Number of Legendary Fish'
+                    text: 'Number of Fish'
                 }
             },
             y: {
@@ -41,12 +38,30 @@ let weightChart = new Chart(ctx, {
                     text: 'Total Weight (kg)'
                 }
             }
+        },
+        plugins: {
+            zoom: {
+                pan: {
+                    enabled: true,
+                    mode: 'x', // Enable horizontal panning
+                    modifierKey: 'shift', // Hold shift to pan
+                },
+                zoom: {
+                    wheel: {
+                        enabled: true,
+                    },
+                    pinch: {
+                        enabled: true
+                    },
+                    mode: 'x',
+                }
+            }
         }
     }
 });
 
 
-// Fetch data from Supabase and update chart
+
 function calculateStatistics(numbers) {
     numbers.sort((a, b) => a - b);
 
@@ -59,7 +74,6 @@ function calculateStatistics(numbers) {
     return [min, q1, median, q3, max];
 }
 
-// Fetch data from Supabase and update chart
 async function fetchData() {
     const { data, error } = await supabase
         .from('fish_data')
@@ -71,7 +85,6 @@ async function fetchData() {
         return;
     }
 
-    // Group data by fish_count
     const groupedData = {};
     data.forEach(row => {
         if (!groupedData[row.fish_count]) {
@@ -80,7 +93,6 @@ async function fetchData() {
         groupedData[row.fish_count].push(row.total_weight);
     });
 
-    // Calculate statistics for each group
     const labels = [];
     const boxplotData = [];
     for (const fishCount in groupedData) {
@@ -89,24 +101,26 @@ async function fetchData() {
         boxplotData.push(calculateStatistics(weights));
     }
 
-    console.log(boxplotData);
-
-    // Update chart data
     weightChart.data.labels = labels;
     weightChart.data.datasets[0].data = boxplotData;
     weightChart.update();
+    const medians = [];
+    for (const fishCount in groupedData) {
+        const weights = groupedData[fishCount];
+        const median = calculateMedian(weights);
+        medians.push({ fishCount, median });
+    }
+
+    updateMedianTable(medians);
 }
 
-// Store input data in Supabase
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const fishCount = Number(fishCountInput.value);
     const totalWeight = Number(weightInput.value);
 
-    // Check if it's a legendary fish submission
     const isLegendary = fishCount === 1 && totalWeight > 100;
 
-    // Check Local Storage if a legendary fish has already been submitted
     if (isLegendary) {
         const legendarySubmitted = localStorage.getItem('legendarySubmitted');
         if (legendarySubmitted) {
@@ -115,7 +129,6 @@ form.addEventListener('submit', async (event) => {
         }
     }
 
-    // Input validation
     if (!Number.isInteger(fishCount) || fishCount < 1 || fishCount > 100) {
         alert("Please enter a valid number of legendary fish (1-100)!");
         return;
@@ -126,7 +139,6 @@ form.addEventListener('submit', async (event) => {
         return;
     }
 
-    // Store in Supabase
     const { error } = await supabase
         .from('fish_data')
         .insert([{ fish_count: fishCount, total_weight: totalWeight }]);
@@ -137,61 +149,54 @@ form.addEventListener('submit', async (event) => {
         return;
     }
 
-    // If the submission was for a legendary fish, set the flag in local storage
     if (isLegendary) {
         localStorage.setItem('legendarySubmitted', 'true');
     }
 
-    // Fetch the latest data and update chart
     fetchData();
     form.reset();
     toggleForm(false);
 });
-function calculateNextLegendaryWeights(data) {
-    const nextTargets = {};
-    const increment = 0.1;
+// Calculate median for an array
+function calculateMedian(arr) {
+    const sorted = arr.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
 
-    // Group by fish count and find max weight for each count
-    data.forEach(row => {
-        const count = row.fish_count;
-        const weight = row.total_weight;
-
-        if (!nextTargets[count] || weight > nextTargets[count]) {
-            nextTargets[count] = weight;
-        }
-    });
-
-    // Increment each max weight for the next target
-    for (let count in nextTargets) {
-        nextTargets[count] = (nextTargets[count] + increment).toFixed(1);
+    if (sorted.length % 2 !== 0) {
+        return sorted[mid];
+    } else {
+        return ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(1);
     }
-
-    // Display the table
-    updateLegendaryTable(nextTargets);
 }
 
-function updateLegendaryTable(nextTargets) {
-    const tbody = document.querySelector('#legendary-table tbody');
+// Update the table with median data
+function updateMedianTable(medians) {
+    const tbody = document.querySelector('#median-table tbody');
     tbody.innerHTML = '';
 
     // Sort by fish count
-    const sortedCounts = Object.keys(nextTargets).sort((a, b) => a - b);
+    const sortedMedians = medians.sort((a, b) => a.fishCount - b.fishCount);
 
-    sortedCounts.forEach(count => {
+    sortedMedians.forEach(item => {
         const row = document.createElement('tr');
-        const countCell = document.createElement('td');
-        const weightCell = document.createElement('td');
+        row.classList.add('border-b', 'border-gray-700', 'hover:bg-gray-700'); // Row hover effect
 
-        countCell.textContent = count;
-        weightCell.textContent = nextTargets[count];
+        const countCell = document.createElement('td');
+        const medianCell = document.createElement('td');
+
+        countCell.classList.add('py-2', 'px-4');
+        medianCell.classList.add('py-2', 'px-4');
+
+        countCell.textContent = item.fishCount;
+        medianCell.textContent = item.median;
 
         row.appendChild(countCell);
-        row.appendChild(weightCell);
+        row.appendChild(medianCell);
         tbody.appendChild(row);
     });
 }
 
-// Toggle Form Visibility
+
 function toggleForm(show) {
     const formContainer = document.getElementById('input-form');
     if (show) {
@@ -203,7 +208,6 @@ function toggleForm(show) {
     }
 }
 
-// Event Listeners for Form Toggle
 openFormButton.addEventListener('click', (event) => {
     event.stopPropagation(); // Prevent click events from bubbling
     toggleForm(true);

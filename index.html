@@ -10,6 +10,7 @@
 
   <script src="https://unpkg.com/chart.js@3"></script>
   <script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 
   <!-- Your custom script.js file -->
   <script type="module" src="script.js" defer></script>
@@ -18,13 +19,31 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body class="bg-gray-900 text-white">
+<h1 class="text-3xl font-bold text-center text-yellow-500 mb-4">Archero 2 - Fish Weight Tracker</h1>
 
-<div class="container mx-auto p-4">
-  <h1 class="text-3xl font-bold text-center text-yellow-500 mb-4">Archero 2 - Fish Weight Tracker</h1>
-
-  <!-- Chart Canvas -->
-  <canvas id="weight-chart" class="bg-gray-800 rounded-lg shadow-lg p-4"></canvas>
+<div class="container mx-auto p-4 overflow-x-auto">
+  <div class="min-w-[800px]">
+    <canvas id="weight-chart" class="bg-gray-800 rounded-lg shadow-lg p-4"></canvas>
+  </div>
 </div>
+
+<div class="container mx-auto mt-6">
+  <h3 class="text-xl font-bold text-yellow-500 text-center mb-4">Median Weight per Fish Count</h3>
+  <div class="overflow-x-auto">
+    <table id="median-table" class="min-w-full bg-gray-800 rounded-lg shadow-lg text-center">
+      <thead>
+      <tr class="bg-gray-700 text-yellow-400">
+        <th class="py-2 px-4">Fish Count</th>
+        <th class="py-2 px-4">Median Weight (kg)</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- Dynamic rows will be added here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
 
 <!-- Floating Button to Open Form -->
 <button id="open-form" class="fixed bottom-8 right-8 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition">
