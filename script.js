@@ -15,11 +15,11 @@ const closeFormButton = document.getElementById('close-form');
 // Basic Chart Setup
 const ctx = document.getElementById('weight-chart').getContext('2d');
 let weightChart = new Chart(ctx, {
-    type: 'line',
+    type: 'boxplot',
     data: {
         labels: [],
         datasets: [{
-            label: 'Total Weight per Fish Count',
+            label: 'Total Weight per Legendary Fish Count',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 2,
@@ -32,7 +32,7 @@ let weightChart = new Chart(ctx, {
             x: {
                 title: {
                     display: true,
-                    text: 'Number of Fish'
+                    text: 'Number of Legendary Fish'
                 }
             },
             y: {
@@ -45,24 +45,55 @@ let weightChart = new Chart(ctx, {
     }
 });
 
+
+// Fetch data from Supabase and update chart
+function calculateStatistics(numbers) {
+    numbers.sort((a, b) => a - b);
+
+    const min = numbers[0];
+    const max = numbers[numbers.length - 1];
+    const q1 = numbers[Math.floor(numbers.length * 0.25)];
+    const median = numbers[Math.floor(numbers.length * 0.5)];
+    const q3 = numbers[Math.floor(numbers.length * 0.75)];
+
+    return [min, q1, median, q3, max];
+}
+
 // Fetch data from Supabase and update chart
 async function fetchData() {
     const { data, error } = await supabase
         .from('fish_data')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('fish_count', { ascending: true });
 
     if (error) {
         console.error('Error fetching data:', error);
         return;
     }
 
-    // Prepare data for chart
-    const labels = data.map(row => row.fish_count);
-    const weights = data.map(row => row.total_weight);
+    // Group data by fish_count
+    const groupedData = {};
+    data.forEach(row => {
+        if (!groupedData[row.fish_count]) {
+            groupedData[row.fish_count] = [];
+        }
+        groupedData[row.fish_count].push(row.total_weight);
+    });
 
+    // Calculate statistics for each group
+    const labels = [];
+    const boxplotData = [];
+    for (const fishCount in groupedData) {
+        const weights = groupedData[fishCount];
+        labels.push(fishCount);
+        boxplotData.push(calculateStatistics(weights));
+    }
+
+    console.log(boxplotData);
+
+    // Update chart data
     weightChart.data.labels = labels;
-    weightChart.data.datasets[0].data = weights;
+    weightChart.data.datasets[0].data = boxplotData;
     weightChart.update();
 }
 
