@@ -5,17 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fish Weight Tracker - Archero 2 Event</title>
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
 
   <script src="https://unpkg.com/chart.js@3"></script>
   <script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@3"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 
-  <!-- Your custom script.js file -->
   <script type="module" src="script.js" defer></script>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body class="bg-gray-900 text-white">
@@ -46,7 +44,7 @@
 
 
 <!-- Floating Button to Open Form -->
-<button id="open-form" class="fixed bottom-8 right-8 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition">
+<button id="open-form" class="fixed bottom-8 right-8 bg-[#374151] text-white rounded-full p-4 shadow-lg transition">
   ➕
 </button>
 
@@ -70,5 +68,13 @@
 </div>
 
 <script type="module" src="script.js" defer></script>
+<script>
+  kofiWidgetOverlay.draw('kardoken', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Tip Me',
+    'floating-chat.donateButton.background-color': '#794bc4',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
 </body>
 </html>
