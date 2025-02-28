@@ -103,25 +103,93 @@ form.addEventListener('submit', async (event) => {
     const fishCount = Number(fishCountInput.value);
     const totalWeight = Number(weightInput.value);
 
-    if (fishCount > 0 && totalWeight > 0) {
-        // Store in Supabase
-        const { error } = await supabase
-            .from('fish_data')
-            .insert([{ fish_count: fishCount, total_weight: totalWeight }]);
+    // Check if it's a legendary fish submission
+    const isLegendary = fishCount === 1 && totalWeight > 100;
 
-        if (error) {
-            console.error('Error inserting data:', error);
+    // Check Local Storage if a legendary fish has already been submitted
+    if (isLegendary) {
+        const legendarySubmitted = localStorage.getItem('legendarySubmitted');
+        if (legendarySubmitted) {
+            alert("You have already submitted a count for a legendary fish!");
             return;
         }
-
-        // Fetch the latest data and update chart
-        fetchData();
-        form.reset();
-        toggleForm(false);
-    } else {
-        alert("Please enter positive numbers!");
     }
+
+    // Input validation
+    if (!Number.isInteger(fishCount) || fishCount < 1 || fishCount > 100) {
+        alert("Please enter a valid number of legendary fish (1-100)!");
+        return;
+    }
+
+    if (isNaN(totalWeight) || totalWeight <= 0 || totalWeight > 50000) {
+        alert("Please enter a valid total weight (0.1 - 500000 kg)!");
+        return;
+    }
+
+    // Store in Supabase
+    const { error } = await supabase
+        .from('fish_data')
+        .insert([{ fish_count: fishCount, total_weight: totalWeight }]);
+
+    if (error) {
+        console.error('Error inserting data:', error);
+        alert("An error occurred while saving the data. Please try again.");
+        return;
+    }
+
+    // If the submission was for a legendary fish, set the flag in local storage
+    if (isLegendary) {
+        localStorage.setItem('legendarySubmitted', 'true');
+    }
+
+    // Fetch the latest data and update chart
+    fetchData();
+    form.reset();
+    toggleForm(false);
 });
+function calculateNextLegendaryWeights(data) {
+    const nextTargets = {};
+    const increment = 0.1;
+
+    // Group by fish count and find max weight for each count
+    data.forEach(row => {
+        const count = row.fish_count;
+        const weight = row.total_weight;
+
+        if (!nextTargets[count] || weight > nextTargets[count]) {
+            nextTargets[count] = weight;
+        }
+    });
+
+    // Increment each max weight for the next target
+    for (let count in nextTargets) {
+        nextTargets[count] = (nextTargets[count] + increment).toFixed(1);
+    }
+
+    // Display the table
+    updateLegendaryTable(nextTargets);
+}
+
+function updateLegendaryTable(nextTargets) {
+    const tbody = document.querySelector('#legendary-table tbody');
+    tbody.innerHTML = '';
+
+    // Sort by fish count
+    const sortedCounts = Object.keys(nextTargets).sort((a, b) => a - b);
+
+    sortedCounts.forEach(count => {
+        const row = document.createElement('tr');
+        const countCell = document.createElement('td');
+        const weightCell = document.createElement('td');
+
+        countCell.textContent = count;
+        weightCell.textContent = nextTargets[count];
+
+        row.appendChild(countCell);
+        row.appendChild(weightCell);
+        tbody.appendChild(row);
+    });
+}
 
 // Toggle Form Visibility
 function toggleForm(show) {
