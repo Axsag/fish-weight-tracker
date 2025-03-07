@@ -10,6 +10,31 @@ const weightInput = document.getElementById('total-weight');
 const openFormButton = document.getElementById('open-form');
 const closeFormButton = document.getElementById('close-form');
 
+const backgroundZonePlugin = {
+    id: 'backgroundZonePlugin',
+    beforeDraw(chart) {
+        const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+        ctx.save();
+
+        const zones = [
+            { min: 0, max: 75, color: 'rgba(253, 246, 213, 0.2)' },
+            { min: 75, max: 230, color: 'rgba(135, 206, 235, 0.2)' },
+            { min: 230, max: 500, color: 'rgba(0, 105, 148, 0.2)' },
+            { min: 500, max: y.max, color: 'rgba(0, 51, 102, 0.2)' }
+        ];
+
+        zones.forEach(zone => {
+            const yMinPixel = y.getPixelForValue(zone.max);
+            const yMaxPixel = y.getPixelForValue(zone.min);
+
+            ctx.fillStyle = zone.color;
+            ctx.fillRect(left, yMinPixel, right - left, yMaxPixel - yMinPixel);
+        });
+
+        ctx.restore();
+    }
+};
+
 const ctx = document.getElementById('weight-chart').getContext('2d');
 let weightChart = new Chart(ctx, {
     type: 'boxplot',
@@ -57,7 +82,8 @@ let weightChart = new Chart(ctx, {
                 }
             }
         }
-    }
+    },
+    plugins: [backgroundZonePlugin]
 });
 
 
