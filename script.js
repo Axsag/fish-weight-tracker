@@ -36,6 +36,7 @@ const backgroundZonePlugin = {
 };
 
 const ctx = document.getElementById('weight-chart').getContext('2d');
+
 let weightChart = new Chart(ctx, {
     type: 'boxplot',
     data: {
@@ -45,6 +46,8 @@ let weightChart = new Chart(ctx, {
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 2,
+            itemRadius: 0,
+            medianColor: 'rgb(232,178,8)',
             data: []
         }]
     },
@@ -68,8 +71,8 @@ let weightChart = new Chart(ctx, {
             zoom: {
                 pan: {
                     enabled: true,
-                    mode: 'x', // Enable horizontal panning
-                    modifierKey: 'shift', // Hold shift to pan
+                    mode: 'x',
+                    modifierKey: 'shift',
                 },
                 zoom: {
                     wheel: {
@@ -85,8 +88,6 @@ let weightChart = new Chart(ctx, {
     },
     plugins: [backgroundZonePlugin]
 });
-
-
 
 function calculateStatistics(numbers) {
     numbers.sort((a, b) => a - b);
